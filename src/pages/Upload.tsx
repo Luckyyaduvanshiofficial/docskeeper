@@ -63,7 +63,7 @@ const UploadPage: React.FC = () => {
     try {
       // Upload file to storage
       setProgress(40);
-      const uploadResult = await storageService.uploadFile(file);
+      const uploadResult = await storageService.uploadFile(file, user.$id);
       
       if (!uploadResult.success || !uploadResult.data) {
         throw new Error(uploadResult.error || 'Upload failed');

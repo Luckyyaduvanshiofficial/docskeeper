@@ -103,11 +103,26 @@ export const authService = {
 
 // Storage Service
 export const storageService = {
-  async uploadFile(file: File) {
+  async uploadFile(file: File, userId: string) {
     try {
-      const response = await storage.createFile(APPWRITE_BUCKET_ID, ID.unique(), file);
+      // Set permissions so only the owner can access this file
+      const permissions = [
+        Permission.read(Role.user(userId)),
+        Permission.update(Role.user(userId)),
+        Permission.delete(Role.user(userId)),
+      ];
+      const response = await storage.createFile(APPWRITE_BUCKET_ID, ID.unique(), file, permissions);
       return { success: true, data: response };
     } catch (error) {
+      // If file security is disabled, retry without permissions
+      if (error instanceof Error && /file security/i.test(error.message) && /disabled/i.test(error.message)) {
+        try {
+          const response = await storage.createFile(APPWRITE_BUCKET_ID, ID.unique(), file);
+          return { success: true, data: response };
+        } catch (retryError) {
+          return { success: false, error: retryError instanceof Error ? retryError.message : 'Upload failed' };
+        }
+      }
       return { success: false, error: error instanceof Error ? error.message : 'Upload failed' };
     }
   },
