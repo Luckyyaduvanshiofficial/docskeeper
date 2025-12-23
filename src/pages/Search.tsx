@@ -49,7 +49,6 @@ const SearchPage: React.FC = () => {
 
     try {
       const result = await databaseService.searchDocuments(
-        user.$id,
         keyword,
         category !== 'all' ? category : undefined,
         startDate || undefined,

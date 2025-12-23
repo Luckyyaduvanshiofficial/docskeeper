@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage, ID, Query, Models, OAuthProvider } from 'appwrite';
+import { Client, Account, Databases, Storage, ID, Query, Models, OAuthProvider, Permission, Role } from 'appwrite';
 
 // Appwrite configuration
 const APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1';
@@ -26,7 +26,11 @@ export interface DocumentMetadata {
   uploadedAt: string;
   extractedText?: string;
   jsonData?: string;
-  userId: string;
+  /**
+   * Optional legacy field. This project relies on Appwrite document permissions
+   * instead of requiring a `userId` attribute in the collection schema.
+   */
+  userId?: string;
 }
 
 // Category types
@@ -132,13 +136,20 @@ export const storageService = {
 
 // Database Service
 export const databaseService = {
-  async createDocument(data: Omit<DocumentMetadata, '$id'>) {
+  async createDocument(data: Omit<DocumentMetadata, '$id' | 'userId'>, ownerUserId: string) {
     try {
+      const permissions = [
+        Permission.read(Role.user(ownerUserId)),
+        Permission.update(Role.user(ownerUserId)),
+        Permission.delete(Role.user(ownerUserId)),
+      ];
+
       const response = await databases.createDocument(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_ID,
         ID.unique(),
-        data
+        data,
+        permissions
       );
       return { success: true, data: response };
     } catch (error) {
@@ -148,11 +159,7 @@ export const databaseService = {
 
   async getDocument(documentId: string) {
     try {
-      const response = await databases.getDocument(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        documentId
-      );
+      const response = await databases.getDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, documentId);
       return { success: true, data: response as unknown as DocumentMetadata & Models.Document };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Fetch failed' };
@@ -161,12 +168,7 @@ export const databaseService = {
 
   async updateDocument(documentId: string, data: Partial<DocumentMetadata>) {
     try {
-      const response = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        documentId,
-        data
-      );
+      const response = await databases.updateDocument(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, documentId, data);
       return { success: true, data: response };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Update failed' };
@@ -182,22 +184,18 @@ export const databaseService = {
     }
   },
 
-  async listDocuments(userId: string, queries: string[] = []) {
+  async listDocuments(queries: string[] = []) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        [Query.equal('userId', userId), ...queries]
-      );
+      const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, queries);
       return { success: true, data: response.documents as unknown as (DocumentMetadata & Models.Document)[] };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'List failed' };
     }
   },
 
-  async searchDocuments(userId: string, keyword: string, category?: string, startDate?: string, endDate?: string) {
+  async searchDocuments(keyword: string, category?: string, startDate?: string, endDate?: string) {
     try {
-      const queries: string[] = [Query.equal('userId', userId)];
+      const queries: string[] = [];
 
       if (category && category !== 'all') {
         queries.push(Query.equal('category', category));
@@ -212,62 +210,52 @@ export const databaseService = {
       }
 
       if (keyword) {
-        queries.push(Query.or([
-          Query.contains('fileName', keyword),
-          Query.contains('description', keyword),
-        ]));
+        queries.push(
+          Query.or([
+            Query.contains('fileName', keyword),
+            Query.contains('description', keyword),
+          ])
+        );
       }
 
-      const response = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        queries
-      );
+      const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, queries);
       return { success: true, data: response.documents as unknown as (DocumentMetadata & Models.Document)[] };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Search failed' };
     }
   },
 
-  async getRecentDocuments(userId: string, limit: number = 5) {
+  async getRecentDocuments(limit: number = 5) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        [
-          Query.equal('userId', userId),
-          Query.orderDesc('uploadedAt'),
-          Query.limit(limit),
-        ]
-      );
+      const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, [
+        Query.orderDesc('uploadedAt'),
+        Query.limit(limit),
+      ]);
       return { success: true, data: response.documents as unknown as (DocumentMetadata & Models.Document)[] };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Fetch failed' };
     }
   },
 
-  async getDocumentsByCategory(userId: string, category: string) {
+  async getDocumentsByCategory(category: string) {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        [Query.equal('userId', userId), Query.equal('category', category)]
-      );
+      const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, [
+        Query.equal('category', category),
+      ]);
       return { success: true, data: response.documents as unknown as (DocumentMetadata & Models.Document)[] };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Fetch failed' };
     }
   },
 
-  async getCategoryCounts(userId: string) {
+  async getCategoryCounts() {
     try {
       const counts: Record<string, number> = {};
       for (const category of DOCUMENT_CATEGORIES) {
-        const response = await databases.listDocuments(
-          APPWRITE_DATABASE_ID,
-          APPWRITE_COLLECTION_ID,
-          [Query.equal('userId', userId), Query.equal('category', category)]
-        );
+        const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, [
+          Query.equal('category', category),
+          Query.limit(1),
+        ]);
         counts[category] = response.total;
       }
       return { success: true, data: counts };
@@ -276,13 +264,9 @@ export const databaseService = {
     }
   },
 
-  async getTotalCount(userId: string) {
+  async getTotalCount() {
     try {
-      const response = await databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_COLLECTION_ID,
-        [Query.equal('userId', userId)]
-      );
+      const response = await databases.listDocuments(APPWRITE_DATABASE_ID, APPWRITE_COLLECTION_ID, [Query.limit(1)]);
       return { success: true, data: response.total };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Fetch failed' };
@@ -292,11 +276,11 @@ export const databaseService = {
 
 // Autofill Service
 export const autofillService = {
-  async generateAutofill(formType: string, userId: string) {
+  async generateAutofill(formType: string) {
     // This would call an Appwrite Cloud Function
     // For now, we'll simulate it by fetching user documents and generating sample data
     try {
-      const docsResult = await databaseService.listDocuments(userId);
+      const docsResult = await databaseService.listDocuments();
       if (!docsResult.success) {
         return { success: false, error: 'Failed to fetch documents' };
       }
