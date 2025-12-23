@@ -21,6 +21,7 @@ interface SidebarProps {
 
 const navItems = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { path: '/documents', icon: FileText, label: 'All Documents' },
   { path: '/upload', icon: Upload, label: 'Upload' },
   { path: '/search', icon: Search, label: 'Search' },
   { path: '/autofill', icon: Sparkles, label: 'AI Autofill' },
