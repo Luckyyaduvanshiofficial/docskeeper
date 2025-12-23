@@ -137,6 +137,8 @@ export const storageService = {
 // Database Service
 export const databaseService = {
   async createDocument(data: Omit<DocumentMetadata, '$id' | 'userId'>, ownerUserId: string) {
+    const documentId = ID.unique();
+
     const permissions = [
       Permission.read(Role.user(ownerUserId)),
       Permission.update(Role.user(ownerUserId)),
@@ -151,36 +153,115 @@ export const databaseService = {
     const isDocSecurityDisabled = (message: string) =>
       /document security/i.test(message) && /disabled/i.test(message);
 
-    try {
-      const response = await databases.createDocument(
+    const isUnknownUserIdAttribute = (message: string) =>
+      /unknown attribute/i.test(message) && /(user[\s_-]*id|userId)/i.test(message);
+
+    const getMissingRequiredAttribute = (message: string) => {
+      const match = message.match(/missing required attribute[:\s"']+([a-zA-Z0-9_]+)/i);
+      return match?.[1];
+    };
+
+    const isUserIdLikeAttribute = (attr: string) => /user/i.test(attr) && /id/i.test(attr);
+
+    const create = (payload: unknown, perms?: string[]) =>
+      databases.createDocument(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_ID,
-        ID.unique(),
-        data,
-        permissions
+        documentId,
+        payload as any,
+        perms
       );
+
+    // Prefer including `userId` (many Appwrite schemas require it). If the collection
+    // doesn't have this attribute, we will retry without it.
+    const payloadWithUserId = {
+      ...data,
+      userId: ownerUserId,
+    };
+
+    try {
+      const response = await create(payloadWithUserId, permissions);
       return { success: true, data: response };
     } catch (error) {
       const message = getErrorMessage(error, 'Create failed');
       console.error('[Appwrite] createDocument failed', error);
 
+      // If your collection uses a different required field name (e.g. `user_id` instead of `userId`),
+      // retry using the attribute name mentioned by Appwrite.
+      const missingAttr = getMissingRequiredAttribute(message);
+      if (missingAttr && isUserIdLikeAttribute(missingAttr) && missingAttr !== 'userId') {
+        const payloadWithAltUserId = {
+          ...data,
+          [missingAttr]: ownerUserId,
+        };
+
+        try {
+          const response = await create(payloadWithAltUserId, permissions);
+          return { success: true, data: response };
+        } catch (altError) {
+          const altMessage = getErrorMessage(altError, 'Create failed');
+          console.error(`[Appwrite] createDocument retry (using ${missingAttr}) failed`, altError);
+
+          if (isDocSecurityDisabled(altMessage)) {
+            try {
+              const response = await create(payloadWithAltUserId);
+              return { success: true, data: response };
+            } catch (alt2Error) {
+              console.error(
+                `[Appwrite] createDocument retry (using ${missingAttr}, no permissions) failed`,
+                alt2Error
+              );
+              return { success: false, error: getErrorMessage(alt2Error, 'Create failed') };
+            }
+          }
+        }
+      }
+
       // If the collection has “Document Security” turned OFF, Appwrite rejects per-document permissions.
       // Retry without permissions so uploads still work.
       if (isDocSecurityDisabled(message)) {
         try {
-          const response = await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            APPWRITE_COLLECTION_ID,
-            ID.unique(),
-            data
-          );
+          const response = await create(payloadWithUserId);
           return { success: true, data: response };
         } catch (retryError) {
+          const retryMessage = getErrorMessage(retryError, 'Create failed');
           console.error('[Appwrite] createDocument retry (no permissions) failed', retryError);
-          return {
-            success: false,
-            error: getErrorMessage(retryError, 'Create failed'),
-          };
+
+          // If the schema doesn't allow userId, retry again without that field.
+          if (isUnknownUserIdAttribute(retryMessage)) {
+            try {
+              const response = await create(data);
+              return { success: true, data: response };
+            } catch (retry2Error) {
+              console.error('[Appwrite] createDocument retry (no userId, no permissions) failed', retry2Error);
+              return { success: false, error: getErrorMessage(retry2Error, 'Create failed') };
+            }
+          }
+
+          return { success: false, error: retryMessage };
+        }
+      }
+
+      // If the schema doesn't have a `userId` attribute, retry without it.
+      if (isUnknownUserIdAttribute(message)) {
+        try {
+          const response = await create(data, permissions);
+          return { success: true, data: response };
+        } catch (retryError) {
+          const retryMessage = getErrorMessage(retryError, 'Create failed');
+          console.error('[Appwrite] createDocument retry (no userId) failed', retryError);
+
+          if (isDocSecurityDisabled(retryMessage)) {
+            try {
+              const response = await create(data);
+              return { success: true, data: response };
+            } catch (retry2Error) {
+              console.error('[Appwrite] createDocument retry (no userId, no permissions) failed', retry2Error);
+              return { success: false, error: getErrorMessage(retry2Error, 'Create failed') };
+            }
+          }
+
+          return { success: false, error: retryMessage };
         }
       }
 
