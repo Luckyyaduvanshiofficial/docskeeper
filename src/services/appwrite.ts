@@ -137,13 +137,21 @@ export const storageService = {
 // Database Service
 export const databaseService = {
   async createDocument(data: Omit<DocumentMetadata, '$id' | 'userId'>, ownerUserId: string) {
-    try {
-      const permissions = [
-        Permission.read(Role.user(ownerUserId)),
-        Permission.update(Role.user(ownerUserId)),
-        Permission.delete(Role.user(ownerUserId)),
-      ];
+    const permissions = [
+      Permission.read(Role.user(ownerUserId)),
+      Permission.update(Role.user(ownerUserId)),
+      Permission.delete(Role.user(ownerUserId)),
+    ];
 
+    const getErrorMessage = (err: unknown, fallback: string) => {
+      if (err && typeof err === 'object' && 'message' in err) return String((err as any).message);
+      return fallback;
+    };
+
+    const isDocSecurityDisabled = (message: string) =>
+      /document security/i.test(message) && /disabled/i.test(message);
+
+    try {
       const response = await databases.createDocument(
         APPWRITE_DATABASE_ID,
         APPWRITE_COLLECTION_ID,
@@ -153,7 +161,30 @@ export const databaseService = {
       );
       return { success: true, data: response };
     } catch (error) {
-      return { success: false, error: error instanceof Error ? error.message : 'Create failed' };
+      const message = getErrorMessage(error, 'Create failed');
+      console.error('[Appwrite] createDocument failed', error);
+
+      // If the collection has “Document Security” turned OFF, Appwrite rejects per-document permissions.
+      // Retry without permissions so uploads still work.
+      if (isDocSecurityDisabled(message)) {
+        try {
+          const response = await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            APPWRITE_COLLECTION_ID,
+            ID.unique(),
+            data
+          );
+          return { success: true, data: response };
+        } catch (retryError) {
+          console.error('[Appwrite] createDocument retry (no permissions) failed', retryError);
+          return {
+            success: false,
+            error: getErrorMessage(retryError, 'Create failed'),
+          };
+        }
+      }
+
+      return { success: false, error: message };
     }
   },
 
