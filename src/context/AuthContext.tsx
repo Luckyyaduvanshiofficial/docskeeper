@@ -11,7 +11,14 @@ interface AuthContextType {
   loginWithGoogle: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_CONTEXT_KEY = '__docvault_auth_context__';
+
+// Keep a singleton context instance across Vite HMR updates.
+// Otherwise providers/consumers can end up referencing different context objects,
+// causing "useAuth must be used within an AuthProvider" even when wrapped.
+const AuthContext: React.Context<AuthContextType | undefined> =
+  (globalThis as any)[AUTH_CONTEXT_KEY] ??
+  ((globalThis as any)[AUTH_CONTEXT_KEY] = createContext<AuthContextType | undefined>(undefined));
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
