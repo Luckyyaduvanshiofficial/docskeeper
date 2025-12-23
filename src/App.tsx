@@ -11,6 +11,7 @@ import MainLayout from "@/components/layout/MainLayout";
 import LandingPage from "@/pages/Landing";
 import LoginPage from "@/pages/Login";
 import DashboardPage from "@/pages/Dashboard";
+import DocumentsPage from "@/pages/Documents";
 import UploadPage from "@/pages/Upload";
 import SearchPage from "@/pages/Search";
 import DocumentViewer from "@/pages/DocumentViewer";
@@ -40,6 +41,7 @@ const App = () => (
               }
             >
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/documents" element={<DocumentsPage />} />
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/document/:id" element={<DocumentViewer />} />
