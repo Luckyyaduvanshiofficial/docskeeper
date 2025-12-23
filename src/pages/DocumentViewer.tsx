@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, Edit2, Save, X, FileText, Calendar, Tag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Edit2, Save, X, FileText, Calendar, Tag, Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,13 +8,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { databaseService, storageService, DOCUMENT_CATEGORIES, DocumentMetadata } from '@/services/appwrite';
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import CategorySelect from '@/components/CategorySelect';
+import { databaseService, storageService, DocumentMetadata } from '@/services/appwrite';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateTime, isImageFile, isPdfFile } from '@/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -139,6 +144,34 @@ const DocumentViewer: React.FC = () => {
     setIsEditing(false);
   };
 
+  const handleDelete = async () => {
+    if (!document) return;
+
+    try {
+      // Delete from database first
+      const dbResult = await databaseService.deleteDocument(document.$id);
+      if (!dbResult.success) {
+        throw new Error(dbResult.error || 'Failed to delete document');
+      }
+
+      // Then delete file from storage
+      await storageService.deleteFile(document.fileId);
+
+      toast({
+        title: 'Deleted',
+        description: 'Document has been permanently deleted.',
+      });
+
+      navigate('/dashboard');
+    } catch (error) {
+      toast({
+        title: 'Delete failed',
+        description: error instanceof Error ? error.message : 'Something went wrong',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -179,18 +212,18 @@ const DocumentViewer: React.FC = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleDownload}>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={handleDownload} className="flex-1 sm:flex-none">
             <Download className="mr-2 h-4 w-4" />
-            Download
+            <span className="hidden sm:inline">Download</span>
           </Button>
           {isEditing ? (
             <>
-              <Button variant="ghost" onClick={cancelEdit}>
+              <Button variant="ghost" onClick={cancelEdit} className="flex-1 sm:flex-none">
                 <X className="mr-2 h-4 w-4" />
                 Cancel
               </Button>
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none">
                 {saving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -200,10 +233,34 @@ const DocumentViewer: React.FC = () => {
               </Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit2 className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
+            <>
+              <Button onClick={() => setIsEditing(true)} className="flex-1 sm:flex-none">
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="flex-1 sm:flex-none">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{document.fileName}"? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
           )}
         </div>
       </div>
@@ -260,18 +317,11 @@ const DocumentViewer: React.FC = () => {
                 Category
               </Label>
               {isEditing ? (
-                <Select value={editCategory} onValueChange={setEditCategory}>
-                  <SelectTrigger className="bg-background border-border">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOCUMENT_CATEGORIES.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategorySelect
+                  value={editCategory}
+                  onValueChange={setEditCategory}
+                  showManage={true}
+                />
               ) : (
                 <Badge variant="outline" className="text-sm">
                   {document.category}

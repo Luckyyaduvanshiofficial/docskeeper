@@ -9,17 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import FileUpload from '@/components/forms/FileUpload';
+import CategorySelect from '@/components/CategorySelect';
 import { useAuth } from '@/context/AuthContext';
-import { storageService, databaseService, DOCUMENT_CATEGORIES } from '@/services/appwrite';
+import { storageService, databaseService } from '@/services/appwrite';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 
@@ -149,21 +143,11 @@ const UploadPage: React.FC = () => {
             {/* Category */}
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select
+              <CategorySelect
+                value={form.watch('category')}
                 onValueChange={(value) => form.setValue('category', value)}
-                defaultValue={form.getValues('category')}
-              >
-                <SelectTrigger className="bg-background border-border">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DOCUMENT_CATEGORIES.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                showManage={true}
+              />
               {form.formState.errors.category && (
                 <p className="text-sm text-destructive">
                   {form.formState.errors.category.message}

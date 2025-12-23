@@ -32,23 +32,23 @@ const CategoryCard: React.FC<CategoryCardProps> = ({ category, count, className 
   return (
     <Link to={`/search?category=${encodeURIComponent(category)}`}>
       <Card className={cn(
-        "group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border bg-card overflow-hidden",
+        "group cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border bg-card overflow-hidden h-full",
         className
       )}>
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className={cn(
-            "w-12 h-12 flex items-center justify-center mb-4 bg-gradient-to-br",
+            "w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center mb-3 sm:mb-4 bg-gradient-to-br rounded-lg",
             config.gradient
           )}>
-            <Icon className="h-6 w-6 text-foreground" />
+            <Icon className="h-5 w-5 sm:h-6 sm:w-6 text-foreground" />
           </div>
-          <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-foreground mb-1 group-hover:text-primary transition-colors text-sm sm:text-base truncate">
             {category}
           </h3>
-          <p className="text-2xl font-bold text-foreground">
+          <p className="text-xl sm:text-2xl font-bold text-foreground">
             {count}
-            <span className="text-sm font-normal text-muted-foreground ml-2">
-              documents
+            <span className="text-xs sm:text-sm font-normal text-muted-foreground ml-1 sm:ml-2">
+              docs
             </span>
           </p>
         </CardContent>

@@ -29,7 +29,7 @@ const MainLayout: React.FC = () => {
       <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
       
       <main className="flex-1 min-w-0">
-        <div className="p-6 lg:p-8">
+        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6">
           <Breadcrumbs items={getBreadcrumbs()} />
           <Outlet />
         </div>
