@@ -78,14 +78,16 @@ const UploadPage: React.FC = () => {
       setProgress(70);
 
       // Create metadata document
-      const metadataResult = await databaseService.createDocument({
-        fileId: uploadResult.data.$id,
-        fileName: file.name,
-        category: data.category,
-        description: data.description || '',
-        uploadedAt: new Date().toISOString(),
-        userId: user.$id,
-      });
+      const metadataResult = await databaseService.createDocument(
+        {
+          fileId: uploadResult.data.$id,
+          fileName: file.name,
+          category: data.category,
+          description: data.description || '',
+          uploadedAt: new Date().toISOString(),
+        },
+        user.$id
+      );
 
       if (!metadataResult.success) {
         // Cleanup: delete the uploaded file if metadata creation fails

@@ -62,7 +62,7 @@ const AutofillPage: React.FC = () => {
     setAutofillData(null);
 
     try {
-      const result = await autofillService.generateAutofill(formType, user.$id);
+      const result = await autofillService.generateAutofill(formType);
       
       if (result.success && result.data) {
         setAutofillData(result.data);

@@ -36,11 +36,11 @@ export const useDocuments = (options: UseDocumentsOptions = {}): UseDocumentsRet
       let result;
       
       if (category) {
-        result = await databaseService.getDocumentsByCategory(user.$id, category);
+        result = await databaseService.getDocumentsByCategory(category);
       } else if (limit) {
-        result = await databaseService.getRecentDocuments(user.$id, limit);
+        result = await databaseService.getRecentDocuments(limit);
       } else {
-        result = await databaseService.listDocuments(user.$id);
+        result = await databaseService.listDocuments();
       }
 
       if (result.success) {

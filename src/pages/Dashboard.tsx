@@ -30,9 +30,9 @@ const DashboardPage: React.FC = () => {
       
       try {
         const [totalResult, categoryResult, recentResult] = await Promise.all([
-          databaseService.getTotalCount(user.$id),
-          databaseService.getCategoryCounts(user.$id),
-          databaseService.getRecentDocuments(user.$id, 5),
+          databaseService.getTotalCount(),
+          databaseService.getCategoryCounts(),
+          databaseService.getRecentDocuments(5),
         ]);
 
         if (totalResult.success) setTotalCount(totalResult.data || 0);
