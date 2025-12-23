@@ -8,6 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/layout/MainLayout";
 
 // Pages
+import LandingPage from "@/pages/Landing";
 import LoginPage from "@/pages/Login";
 import DashboardPage from "@/pages/Dashboard";
 import UploadPage from "@/pages/Upload";
@@ -27,6 +28,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             
             {/* Protected routes */}
@@ -43,9 +45,6 @@ const App = () => (
               <Route path="/document/:id" element={<DocumentViewer />} />
               <Route path="/autofill" element={<AutofillPage />} />
             </Route>
-
-            {/* Redirects */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             
             {/* 404 */}
             <Route path="*" element={<NotFound />} />

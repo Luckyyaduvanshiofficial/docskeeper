@@ -125,12 +125,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
 
       {/* Mobile menu button */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
         onClick={onToggle}
-        className="fixed top-4 left-4 z-30 lg:hidden"
+        className="fixed top-3 left-3 z-30 lg:hidden bg-background shadow-md"
       >
-        <Menu className="h-6 w-6" />
+        <Menu className="h-5 w-5" />
       </Button>
     </>
   );

@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/sheet';
 import DocumentCard from '@/components/cards/DocumentCard';
 import { useAuth } from '@/context/AuthContext';
-import { databaseService, DOCUMENT_CATEGORIES, DocumentMetadata } from '@/services/appwrite';
+import { databaseService, DocumentMetadata } from '@/services/appwrite';
+import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Models } from 'appwrite';
@@ -30,6 +31,7 @@ import { Models } from 'appwrite';
 const SearchPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { allCategories } = useCategories();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [keyword, setKeyword] = useState(searchParams.get('q') || '');
@@ -146,7 +148,7 @@ const SearchPage: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  {DOCUMENT_CATEGORIES.map((cat) => (
+                  {allCategories.map((cat) => (
                     <SelectItem key={cat} value={cat}>
                       {cat}
                     </SelectItem>
@@ -183,7 +185,7 @@ const SearchPage: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Categories</SelectItem>
-                          {DOCUMENT_CATEGORIES.map((cat) => (
+                          {allCategories.map((cat) => (
                             <SelectItem key={cat} value={cat}>
                               {cat}
                             </SelectItem>

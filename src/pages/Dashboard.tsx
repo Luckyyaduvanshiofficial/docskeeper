@@ -8,7 +8,8 @@ import DocumentCard from '@/components/cards/DocumentCard';
 import StatCard from '@/components/cards/StatCard';
 import SearchBar from '@/components/forms/SearchBar';
 import { useAuth } from '@/context/AuthContext';
-import { databaseService, DOCUMENT_CATEGORIES, DocumentMetadata } from '@/services/appwrite';
+import { databaseService, DocumentMetadata } from '@/services/appwrite';
+import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +19,7 @@ const DashboardPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { allCategories } = useCategories();
   
   const [totalCount, setTotalCount] = useState(0);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
@@ -103,7 +105,7 @@ const DashboardPage: React.FC = () => {
         />
         <StatCard
           title="Categories"
-          value={DOCUMENT_CATEGORIES.length}
+          value={allCategories.length}
           icon={Clock}
           description="Organized collections"
         />
@@ -131,8 +133,8 @@ const DashboardPage: React.FC = () => {
             <Link to="/search">View All</Link>
           </Button>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {DOCUMENT_CATEGORIES.map((category) => (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+          {allCategories.map((category) => (
             <CategoryCard
               key={category}
               category={category}
