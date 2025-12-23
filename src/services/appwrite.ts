@@ -1,11 +1,11 @@
 import { Client, Account, Databases, Storage, ID, Query, Models, OAuthProvider } from 'appwrite';
 
-// Environment variables for Appwrite configuration
-const APPWRITE_ENDPOINT = import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://cloud.appwrite.io/v1';
-const APPWRITE_PROJECT_ID = import.meta.env.VITE_APPWRITE_PROJECT_ID || '';
-const APPWRITE_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || '';
-const APPWRITE_COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || 'document_metadata';
-const APPWRITE_BUCKET_ID = import.meta.env.VITE_APPWRITE_BUCKET_ID || 'documents';
+// Appwrite configuration
+const APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1';
+const APPWRITE_PROJECT_ID = '694a65a80014a89aaa9b';
+const APPWRITE_DATABASE_ID = '694a662c001dfe4fc01e';
+const APPWRITE_COLLECTION_ID = 'document_metadata';
+const APPWRITE_BUCKET_ID = '694a67e7003534371965';
 
 // Initialize Appwrite Client
 const client = new Client();
