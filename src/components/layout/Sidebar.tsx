@@ -8,11 +8,13 @@ import {
   LogOut,
   FileText,
   Menu,
-  X
+  X,
+  Settings
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import logoImage from '@/assets/logo.png';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ const navItems = [
   { path: '/upload', icon: Upload, label: 'Upload' },
   { path: '/search', icon: Search, label: 'Search' },
   { path: '/autofill', icon: Sparkles, label: 'AI Autofill' },
+  { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
@@ -56,13 +59,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-lg">
-              <FileText className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-foreground">DocsKeeper</h1>
-              <p className="text-xs text-muted-foreground">Your Personal Document Vault</p>
-            </div>
+              <img src={logoImage} alt="DocsKeeper" className="w-10 h-10 rounded-lg object-contain" />
+              <div>
+                <h1 className="font-semibold text-foreground">DocsKeeper</h1>
+                <p className="text-xs text-muted-foreground">Your Personal Document Vault</p>
+              </div>
             </div>
             <Button
               variant="ghost"

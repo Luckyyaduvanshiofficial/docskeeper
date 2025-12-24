@@ -13,6 +13,11 @@ const navItems = [
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
+  
+  // Hide on desktop
+  if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+    return null;
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50 lg:hidden">

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  FileText, 
   Shield, 
   Search, 
   FolderOpen, 
@@ -11,10 +10,12 @@ import {
   Check,
   Lock,
   Eye,
-  Server
+  Server,
+  FileText
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import logoImage from '@/assets/logo.png';
 
 const features = [
   {
@@ -70,9 +71,7 @@ const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-lg shadow-md">
-              <FileText className="h-5 w-5 text-primary-foreground" />
-            </div>
+            <img src={logoImage} alt="DocsKeeper" className="w-10 h-10 rounded-lg object-contain" />
             <div>
               <span className="text-xl font-bold text-foreground">DocsKeeper</span>
               <p className="text-[10px] text-muted-foreground leading-none">Your Personal Document Vault</p>
@@ -223,9 +222,7 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <FileText className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <img src={logoImage} alt="DocsKeeper" className="w-8 h-8 rounded-lg object-contain" />
               <span className="font-semibold text-foreground">DocsKeeper</span>
             </div>
             <p className="text-sm text-muted-foreground">
