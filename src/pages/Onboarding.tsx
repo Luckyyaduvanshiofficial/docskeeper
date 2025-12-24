@@ -32,6 +32,8 @@ const slides: OnboardingSlide[] = [
 
 const ONBOARDING_KEY = 'docskeeper_onboarding_completed';
 
+const AUTO_ADVANCE_DELAY = 5000; // 5 seconds
+
 const OnboardingPage: React.FC = () => {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -39,6 +41,8 @@ const OnboardingPage: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   // Check if onboarding was already completed
   useEffect(() => {
@@ -47,6 +51,37 @@ const OnboardingPage: React.FC = () => {
       navigate('/login', { replace: true });
     }
   }, [navigate]);
+
+  // Auto-advance slides
+  useEffect(() => {
+    if (isPaused || isAnimating) return;
+
+    const progressInterval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) return 0;
+        return prev + (100 / (AUTO_ADVANCE_DELAY / 100));
+      });
+    }, 100);
+
+    const autoAdvance = setTimeout(() => {
+      if (currentSlide < slides.length - 1) {
+        goToSlide(currentSlide + 1);
+      } else {
+        goToSlide(0); // Loop back to first slide
+      }
+      setProgress(0);
+    }, AUTO_ADVANCE_DELAY);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearTimeout(autoAdvance);
+    };
+  }, [currentSlide, isPaused, isAnimating]);
+
+  // Reset progress when slide changes
+  useEffect(() => {
+    setProgress(0);
+  }, [currentSlide]);
 
   const minSwipeDistance = 50;
 
@@ -121,16 +156,33 @@ const OnboardingPage: React.FC = () => {
   return (
     <div 
       className="min-h-screen bg-background flex flex-col"
-      onTouchStart={onTouchStart}
+      onTouchStart={(e) => { setIsPaused(true); onTouchStart(e); }}
       onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
+      onTouchEnd={() => { onTouchEnd(); setIsPaused(false); }}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
     >
-      {/* Logo Header */}
-      <div className="flex items-center gap-2 p-6 animate-fade-in">
-        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-          <FileText className="h-4 w-4 text-primary-foreground" />
+      {/* Header with Logo and Step Indicator */}
+      <div className="flex items-center justify-between p-6 animate-fade-in">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <FileText className="h-4 w-4 text-primary-foreground" />
+          </div>
+          <span className="text-lg font-semibold text-foreground">DocsKeeper</span>
         </div>
-        <span className="text-lg font-semibold text-foreground">DocsKeeper</span>
+        <span className="text-sm text-muted-foreground">
+          Step {currentSlide + 1} of {slides.length}
+        </span>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="px-6">
+        <div className="h-1 bg-muted rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-primary transition-all duration-100 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
       {/* Slide Content */}
