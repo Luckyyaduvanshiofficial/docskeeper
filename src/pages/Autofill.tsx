@@ -115,8 +115,8 @@ const AutofillPage: React.FC = () => {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* Header */}
-      <div className="text-center">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 mb-4">
+      <div className="text-center animate-fade-in">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 mb-4 rounded-2xl">
           <Sparkles className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-3xl font-bold text-foreground">AI Autofill Assistant</h1>
@@ -127,7 +127,7 @@ const AutofillPage: React.FC = () => {
       </div>
 
       {/* Form Selection */}
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle>Generate Autofill Data</CardTitle>
           <CardDescription>
@@ -154,7 +154,7 @@ const AutofillPage: React.FC = () => {
           <Button 
             onClick={handleGenerate} 
             disabled={loading || !formType}
-            className="w-full"
+            className="w-full shadow-md hover:shadow-lg transition-all"
           >
             {loading ? (
               <>
@@ -173,7 +173,7 @@ const AutofillPage: React.FC = () => {
 
       {/* Results */}
       {autofillData && (
-        <Card className="border-border bg-card">
+        <Card className="border-border bg-card shadow-sm animate-fade-in">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle>Autofill Results</CardTitle>
@@ -181,7 +181,7 @@ const AutofillPage: React.FC = () => {
                 Data extracted from your documents for {FORM_TYPES.find(t => t.value === formType)?.label}
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={handleCopyAll}>
+            <Button variant="outline" onClick={handleCopyAll} className="shadow-sm hover:shadow-md transition-all">
               {copied ? (
                 <>
                   <Check className="mr-2 h-4 w-4" />
@@ -205,7 +205,7 @@ const AutofillPage: React.FC = () => {
               </TableHeader>
               <TableBody>
                 {Object.entries(autofillData).map(([field, value]) => (
-                  <TableRow key={field}>
+                  <TableRow key={field} className="hover:bg-muted/50 transition-colors">
                     <TableCell className="font-medium text-foreground">
                       {field}
                     </TableCell>
@@ -221,10 +221,10 @@ const AutofillPage: React.FC = () => {
       )}
 
       {/* Tips */}
-      <Card className="border-border bg-card/50">
+      <Card className="border-border bg-card/50 shadow-sm">
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-secondary/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-secondary/20 flex items-center justify-center flex-shrink-0 rounded-xl">
               <FileText className="h-5 w-5 text-secondary-foreground" />
             </div>
             <div>

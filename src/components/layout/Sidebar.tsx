@@ -56,13 +56,13 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary flex items-center justify-center">
-                <FileText className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div>
-                <h1 className="font-semibold text-foreground">DocVault</h1>
-                <p className="text-xs text-muted-foreground">Document Manager</p>
-              </div>
+            <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-lg">
+              <FileText className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="font-semibold text-foreground">DocsKeeper</h1>
+              <p className="text-xs text-muted-foreground">Your Personal Document Vault</p>
+            </div>
             </div>
             <Button
               variant="ghost"
@@ -84,13 +84,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                   to={item.path}
                   onClick={() => window.innerWidth < 1024 && onToggle()}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg group",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1"
                   )}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className={cn(
+                    "h-5 w-5 transition-transform",
+                    !isActive && "group-hover:scale-110"
+                  )} />
                   {item.label}
                 </NavLink>
               );

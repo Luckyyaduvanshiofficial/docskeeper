@@ -23,14 +23,14 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
     return (
       <Link to={`/document/${document.$id}`}>
         <div className={cn(
-          "flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card border border-border hover:bg-accent/50 transition-colors cursor-pointer",
+          "flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-card border border-border rounded-lg transition-all duration-200 hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 cursor-pointer group",
           className
         )}>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 flex items-center justify-center flex-shrink-0 rounded-lg">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 flex items-center justify-center flex-shrink-0 rounded-lg transition-transform group-hover:scale-110">
             <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate text-sm sm:text-base">{document.fileName}</p>
+            <p className="font-medium text-foreground truncate text-sm sm:text-base group-hover:text-primary transition-colors">{document.fileName}</p>
             <p className="text-xs sm:text-sm text-muted-foreground">{formatDate(document.uploadedAt)}</p>
           </div>
           <Badge variant="secondary" className="flex-shrink-0 text-xs">
@@ -42,14 +42,17 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
   }
 
   return (
-    <Card className={cn("border-border bg-card overflow-hidden", className)}>
+    <Card className={cn(
+      "border-border bg-card overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-1 group",
+      className
+    )}>
       <CardContent className="p-4 sm:p-6">
         <div className="flex items-start gap-3 sm:gap-4">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 flex items-center justify-center flex-shrink-0 rounded-lg">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-primary/10 flex items-center justify-center flex-shrink-0 rounded-xl transition-transform group-hover:scale-110">
             <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground truncate mb-1 text-sm sm:text-base">
+            <h3 className="font-semibold text-foreground truncate mb-1 text-sm sm:text-base group-hover:text-primary transition-colors">
               {document.fileName}
             </h3>
             {document.description && (
@@ -65,7 +68,7 @@ const DocumentCard: React.FC<DocumentCardProps> = ({
               </span>
             </div>
           </div>
-          <Button asChild variant="ghost" size="icon" className="flex-shrink-0">
+          <Button asChild variant="ghost" size="icon" className="flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
             <Link to={`/document/${document.$id}`}>
               <Eye className="h-4 w-4 sm:h-5 sm:w-5" />
             </Link>

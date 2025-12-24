@@ -15,7 +15,7 @@ const BottomNav: React.FC = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border z-50 lg:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-50 lg:hidden">
       <div className="flex items-center justify-around py-2 px-4">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -27,7 +27,7 @@ const BottomNav: React.FC = () => {
                 to={item.path}
                 className="flex flex-col items-center -mt-6"
               >
-                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg">
+                <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95">
                   <item.icon className="h-6 w-6 text-primary-foreground" />
                 </div>
               </NavLink>
@@ -38,18 +38,23 @@ const BottomNav: React.FC = () => {
             <NavLink
               key={item.path}
               to={item.path}
-              className="flex flex-col items-center py-2 px-3"
+              className="flex flex-col items-center py-2 px-3 group"
             >
-              <item.icon 
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  isActive ? "text-primary" : "text-muted-foreground"
-                )} 
-              />
+              <div className={cn(
+                "p-1.5 rounded-lg transition-all",
+                isActive && "bg-primary/10"
+              )}>
+                <item.icon 
+                  className={cn(
+                    "h-5 w-5 transition-all",
+                    isActive ? "text-primary scale-110" : "text-muted-foreground group-hover:text-foreground group-hover:scale-110"
+                  )} 
+                />
+              </div>
               <span 
                 className={cn(
-                  "text-xs mt-1 transition-colors",
-                  isActive ? "text-primary font-medium" : "text-muted-foreground"
+                  "text-xs mt-0.5 transition-colors",
+                  isActive ? "text-primary font-medium" : "text-muted-foreground group-hover:text-foreground"
                 )}
               >
                 {item.label}
