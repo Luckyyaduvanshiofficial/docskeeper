@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   FileText, 
@@ -10,13 +10,18 @@ import {
   Download, 
   CheckSquare, 
   Square,
-  X
+  X,
+  Grid3X3,
+  List,
+  ChevronDown,
+  Image,
+  Archive,
+  Share2
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
@@ -43,18 +48,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { databaseService, storageService, DocumentMetadata } from '@/services/appwrite';
 import { useCategories } from '@/hooks/useCategories';
+import { useAuth } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
+import SearchBar from '@/components/forms/SearchBar';
 
 type DocumentWithId = DocumentMetadata & { $id: string };
 
+// Category icons for browse section - exclude video/audio/recording
+const browseCategories = [
+  { name: 'Documents', icon: FileText, count: '0' },
+  { name: 'Images', icon: Image, count: '0' },
+  { name: 'Archive', icon: Archive, count: '0' },
+];
+
 const Documents: React.FC = () => {
+  const { user } = useAuth();
   const [documents, setDocuments] = useState<DocumentWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { allCategories } = useCategories();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
   
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -89,6 +113,20 @@ const Documents: React.FC = () => {
     fetchDocuments();
   };
 
+  const handleSearch = useCallback((query: string) => {
+    setSearchQuery(query);
+  }, []);
+
+  // Get document suggestions for search
+  const getSearchSuggestions = useCallback(async (query: string): Promise<string[]> => {
+    if (!query.trim()) return [];
+    const uniqueNames = [...new Set(documents.map(d => d.fileName))];
+    const uniqueCategories = [...new Set(documents.map(d => d.category))];
+    return [...uniqueNames, ...uniqueCategories]
+      .filter(s => s.toLowerCase().includes(query.toLowerCase()))
+      .slice(0, 6);
+  }, [documents]);
+
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     setSelectedIds(new Set());
@@ -104,23 +142,11 @@ const Documents: React.FC = () => {
     setSelectedIds(newSelected);
   };
 
-  const selectAllInCategory = (categoryDocs: DocumentWithId[]) => {
-    const newSelected = new Set(selectedIds);
-    const allSelected = categoryDocs.every(doc => selectedIds.has(doc.$id));
-    
-    if (allSelected) {
-      categoryDocs.forEach(doc => newSelected.delete(doc.$id));
-    } else {
-      categoryDocs.forEach(doc => newSelected.add(doc.$id));
-    }
-    setSelectedIds(newSelected);
-  };
-
   const selectAll = () => {
-    if (selectedIds.size === documents.length) {
+    if (selectedIds.size === filteredDocuments.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(documents.map(d => d.$id)));
+      setSelectedIds(new Set(filteredDocuments.map(d => d.$id)));
     }
   };
 
@@ -134,9 +160,7 @@ const Documents: React.FC = () => {
       if (!doc) continue;
 
       try {
-        // Delete file from storage
         await storageService.deleteFile(doc.fileId);
-        // Delete metadata from database
         const result = await databaseService.deleteDocument(docId);
         if (result.success) {
           successCount++;
@@ -202,29 +226,6 @@ const Documents: React.FC = () => {
     fetchDocuments();
   };
 
-  const handleExportAll = () => {
-    const exportData = documents.map(doc => ({
-      fileName: doc.fileName,
-      category: doc.category,
-      description: doc.description,
-      uploadedAt: doc.uploadedAt,
-      extractedText: doc.extractedText || '',
-      jsonData: doc.jsonData || '',
-    }));
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `documents-export-${format(new Date(), 'yyyy-MM-dd')}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast.success(`Exported ${documents.length} documents`);
-  };
-
   const handleExportCSV = () => {
     const headers = ['File Name', 'Category', 'Description', 'Uploaded At'];
     const rows = documents.map(doc => [
@@ -252,76 +253,63 @@ const Documents: React.FC = () => {
     toast.success(`Exported ${documents.length} documents as CSV`);
   };
 
-  // Group documents by category
+  // Filter documents by search
+  const filteredDocuments = documents.filter(doc => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      doc.fileName.toLowerCase().includes(query) ||
+      doc.category.toLowerCase().includes(query) ||
+      (doc.description && doc.description.toLowerCase().includes(query))
+    );
+  });
+
+  // Sort documents
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+    switch (sortBy) {
+      case 'newest':
+        return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime();
+      case 'oldest':
+        return new Date(a.uploadedAt).getTime() - new Date(b.uploadedAt).getTime();
+      case 'name':
+        return a.fileName.localeCompare(b.fileName);
+      default:
+        return 0;
+    }
+  });
+
+  // Group documents by category for grid view
   const documentsByCategory = allCategories.reduce((acc, category) => {
-    acc[category] = documents.filter((doc) => doc.category === category);
+    acc[category] = sortedDocuments.filter((doc) => doc.category === category);
     return acc;
   }, {} as Record<string, DocumentWithId[]>);
 
-  // Get uncategorized documents
-  const uncategorized = documents.filter(
-    (doc) => !doc.category || !allCategories.includes(doc.category)
-  );
-
-  // Categories with documents (sorted by count)
-  const categoriesWithDocs = allCategories
-    .filter((cat) => documentsByCategory[cat]?.length > 0)
-    .sort((a, b) => documentsByCategory[b].length - documentsByCategory[a].length);
-
-  const renderDocumentRow = (doc: DocumentWithId) => {
-    const isSelected = selectedIds.has(doc.$id);
-    
-    if (isSelectionMode) {
-      return (
-        <div
-          key={doc.$id}
-          onClick={() => toggleDocumentSelection(doc.$id)}
-          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-            isSelected 
-              ? 'border-primary bg-primary/10' 
-              : 'border-border hover:bg-accent'
-          }`}
-        >
-          <Checkbox checked={isSelected} />
-          <FileText className={`h-5 w-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-foreground truncate">{doc.fileName}</p>
-            <p className="text-sm text-muted-foreground">
-              {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <Link
-        key={doc.$id}
-        to={`/document/${doc.$id}`}
-        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors group"
-      >
-        <FileText className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground truncate">{doc.fileName}</p>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
-          </p>
-        </div>
-        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground" />
-      </Link>
-    );
+  // Get category counts for browse section
+  const getCategoryCount = (categoryName: string) => {
+    const count = documents.filter(doc => {
+      if (categoryName === 'Documents') {
+        return doc.fileName.endsWith('.pdf') || doc.fileName.endsWith('.doc') || doc.fileName.endsWith('.docx');
+      }
+      if (categoryName === 'Images') {
+        return doc.fileName.endsWith('.jpg') || doc.fileName.endsWith('.jpeg') || doc.fileName.endsWith('.png') || doc.fileName.endsWith('.gif');
+      }
+      return true;
+    }).length;
+    return count.toString();
   };
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-24" />
-        </div>
-        <div className="space-y-4">
+      <div className="space-y-6 pb-24 lg:pb-8">
+        <Skeleton className="h-20 w-full rounded-2xl" />
+        <div className="flex gap-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32 w-full" />
+            <Skeleton key={i} className="h-24 flex-1 rounded-xl" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
           ))}
         </div>
       </div>
@@ -329,16 +317,114 @@ const Documents: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">All Documents</h1>
-          <p className="text-muted-foreground">
-            {documents.length} document{documents.length !== 1 ? 's' : ''} organized by category
-          </p>
+    <div className="space-y-6 pb-24 lg:pb-8">
+      {/* Header with User Info */}
+      <Card className="border-border bg-card shadow-sm">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center text-xl font-semibold text-primary">
+                  {user?.name?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-card" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-foreground">
+                  Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 17 ? 'Afternoon' : 'Evening'}, {user?.name?.split(' ')[0] || 'User'}!
+                </h1>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                  <span className="flex items-center gap-1">
+                    <FolderOpen className="h-4 w-4" />
+                    {documents.length} files
+                  </span>
+                  <span>•</span>
+                  <span>{allCategories.length} categories</span>
+                </div>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-2">
+              <Button variant="outline" size="sm" className="gap-2">
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Browse By Category */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Browse By Category</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-3 overflow-x-auto pb-2">
+          {browseCategories.map((cat, index) => (
+            <Link
+              key={cat.name}
+              to={`/search?category=${cat.name}`}
+              className={`flex-shrink-0 p-4 rounded-xl border transition-all hover:shadow-md hover:-translate-y-0.5 ${
+                index === 0 ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/50'
+              }`}
+            >
+              <cat.icon className={`h-6 w-6 mb-2 ${index === 0 ? 'text-primary' : 'text-muted-foreground'}`} />
+              <p className={`text-sm font-medium ${index === 0 ? 'text-primary' : 'text-foreground'}`}>{cat.name}</p>
+              <p className="text-xs text-muted-foreground">{getCategoryCount(cat.name)} Total</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Browse All Files Section */}
+      <section>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Browse All Files</h2>
+          <div className="flex items-center gap-2">
+            {/* Sort Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <ChevronDown className="h-4 w-4" />
+                  {sortBy === 'newest' ? 'Newest First' : sortBy === 'oldest' ? 'Oldest First' : 'By Name'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSortBy('newest')}>Newest First</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('oldest')}>Oldest First</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy('name')}>By Name</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* View Mode Toggle */}
+            <div className="flex border border-border rounded-lg overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 transition-colors ${viewMode === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 transition-colors ${viewMode === 'list' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+              >
+                <List className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-4">
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="Search by filename, category..."
+            onSuggestionsFetch={getSearchSuggestions}
+            recentSearches={['Aadhaar', 'Fee Receipt', 'Certificate']}
+          />
+        </div>
+
+        {/* Actions Bar */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           <Button
             variant="outline"
             size="sm"
@@ -355,16 +441,7 @@ const Documents: React.FC = () => {
             disabled={documents.length === 0}
           >
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportAll}
-            disabled={documents.length === 0}
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export JSON
+            Export
           </Button>
           <Button
             variant={isSelectionMode ? 'secondary' : 'outline'}
@@ -385,134 +462,163 @@ const Documents: React.FC = () => {
             )}
           </Button>
         </div>
-      </div>
 
-      {/* Bulk Actions Bar */}
-      {isSelectionMode && (
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-muted rounded-lg border">
-          <Button variant="outline" size="sm" onClick={selectAll}>
-            {selectedIds.size === documents.length ? (
-              <>
-                <Square className="h-4 w-4 mr-2" />
-                Deselect All
-              </>
-            ) : (
-              <>
-                <CheckSquare className="h-4 w-4 mr-2" />
-                Select All
-              </>
-            )}
-          </Button>
-          <span className="text-sm text-muted-foreground">
-            {selectedIds.size} selected
-          </span>
-          <div className="flex-1" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowMoveDialog(true)}
-            disabled={selectedIds.size === 0}
-          >
-            <FolderInput className="h-4 w-4 mr-2" />
-            Move
-          </Button>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={() => setShowDeleteDialog(true)}
-            disabled={selectedIds.size === 0}
-          >
-            <Trash2 className="h-4 w-4 mr-2" />
-            Delete
-          </Button>
-        </div>
-      )}
-
-      {documents.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">No documents yet</h3>
-            <p className="text-muted-foreground mb-4">Upload your first document to get started</p>
-            <Button asChild>
-              <Link to="/upload">Upload Document</Link>
+        {/* Bulk Actions Bar */}
+        {isSelectionMode && (
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-muted rounded-xl border mb-4 animate-fade-in">
+            <Button variant="outline" size="sm" onClick={selectAll}>
+              {selectedIds.size === filteredDocuments.length ? (
+                <>
+                  <Square className="h-4 w-4 mr-2" />
+                  Deselect All
+                </>
+              ) : (
+                <>
+                  <CheckSquare className="h-4 w-4 mr-2" />
+                  Select All
+                </>
+              )}
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Accordion type="multiple" defaultValue={categoriesWithDocs} className="space-y-4">
-          {categoriesWithDocs.map((category) => {
-            const categoryDocs = documentsByCategory[category];
-            const allCategorySelected = categoryDocs.every(doc => selectedIds.has(doc.$id));
-            
-            return (
-              <AccordionItem key={category} value={category} className="border rounded-lg bg-card">
-                <AccordionTrigger className="px-4 hover:no-underline">
-                  <div className="flex items-center gap-3">
-                    {isSelectionMode && (
-                      <Checkbox
-                        checked={allCategorySelected}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          selectAllInCategory(categoryDocs);
-                        }}
-                      />
-                    )}
-                    <FolderOpen className="h-5 w-5 text-primary" />
-                    <span className="font-medium text-foreground">{category}</span>
-                    <Badge variant="secondary">{categoryDocs.length}</Badge>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className="px-4 pb-4">
-                  <div className="grid gap-3">
-                    {categoryDocs.map(renderDocumentRow)}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            );
-          })}
+            <span className="text-sm text-muted-foreground">
+              {selectedIds.size} selected
+            </span>
+            <div className="flex-1" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMoveDialog(true)}
+              disabled={selectedIds.size === 0}
+            >
+              <FolderInput className="h-4 w-4 mr-2" />
+              Move
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowDeleteDialog(true)}
+              disabled={selectedIds.size === 0}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </Button>
+          </div>
+        )}
 
-          {uncategorized.length > 0 && (
-            <AccordionItem value="uncategorized" className="border rounded-lg bg-card">
-              <AccordionTrigger className="px-4 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  {isSelectionMode && (
-                    <Checkbox
-                      checked={uncategorized.every(doc => selectedIds.has(doc.$id))}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        selectAllInCategory(uncategorized);
-                      }}
-                    />
+        {/* Files Grid/List */}
+        {sortedDocuments.length === 0 ? (
+          <Card className="border-border bg-card">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium text-foreground mb-2">
+                {searchQuery ? 'No documents found' : 'No documents yet'}
+              </h3>
+              <p className="text-muted-foreground mb-4">
+                {searchQuery ? 'Try adjusting your search terms' : 'Upload your first document to get started'}
+              </p>
+              {!searchQuery && (
+                <Button asChild>
+                  <Link to="/upload">Upload Document</Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {allCategories.map((category) => {
+              const categoryDocs = documentsByCategory[category] || [];
+              if (categoryDocs.length === 0) return null;
+              
+              return (
+                <Link
+                  key={category}
+                  to={`/search?category=${encodeURIComponent(category)}`}
+                  className="group"
+                >
+                  <Card className="border-border bg-card hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <FolderOpen className="h-6 w-6 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {category}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {categoryDocs.length} files
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sortedDocuments.map((doc) => (
+              <Card
+                key={doc.$id}
+                className={`border-border bg-card hover:shadow-md transition-all ${
+                  isSelectionMode && selectedIds.has(doc.$id) ? 'border-primary bg-primary/5' : ''
+                }`}
+              >
+                <CardContent className="p-4">
+                  {isSelectionMode ? (
+                    <div
+                      onClick={() => toggleDocumentSelection(doc.$id)}
+                      className="flex items-center gap-4 cursor-pointer"
+                    >
+                      <Checkbox checked={selectedIds.has(doc.$id)} />
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate">{doc.fileName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {doc.category} • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <Link
+                      to={`/document/${doc.$id}`}
+                      className="flex items-center gap-4 group"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                          {doc.fileName}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {doc.category} • {format(new Date(doc.uploadedAt), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </Link>
                   )}
-                  <FolderOpen className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium text-foreground">Uncategorized</span>
-                  <Badge variant="outline">{uncategorized.length}</Badge>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div className="grid gap-3">
-                  {uncategorized.map(renderDocumentRow)}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-        </Accordion>
-      )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </section>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedIds.size} document{selectedIds.size !== 1 ? 's' : ''}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The selected documents and their files will be permanently deleted.
+              This action cannot be undone. The selected documents will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessing}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleBulkDelete} 
+            <AlertDialogAction
+              onClick={handleBulkDelete}
               disabled={isProcessing}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
@@ -531,20 +637,18 @@ const Documents: React.FC = () => {
               Select the category to move the selected documents to.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Select value={targetCategory} onValueChange={setTargetCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {allCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Select value={targetCategory} onValueChange={setTargetCategory}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              {allCategories.map((cat) => (
+                <SelectItem key={cat} value={cat}>
+                  {cat}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowMoveDialog(false)} disabled={isProcessing}>
               Cancel
