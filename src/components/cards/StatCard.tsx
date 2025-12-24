@@ -19,7 +19,10 @@ const StatCard: React.FC<StatCardProps> = ({
   className,
 }) => {
   return (
-    <Card className={cn("border-border bg-card", className)}>
+    <Card className={cn(
+      "border-border bg-card transition-all duration-300 hover:shadow-lg hover:-translate-y-1 group cursor-pointer",
+      className
+    )}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -29,7 +32,7 @@ const StatCard: React.FC<StatCardProps> = ({
               <p className="text-sm text-muted-foreground mt-1">{description}</p>
             )}
           </div>
-          <div className="w-12 h-12 bg-primary/10 flex items-center justify-center">
+          <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-xl transition-transform group-hover:scale-110">
             <Icon className="h-6 w-6 text-primary" />
           </div>
         </div>

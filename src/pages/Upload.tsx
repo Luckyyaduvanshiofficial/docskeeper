@@ -138,14 +138,16 @@ const UploadPage: React.FC = () => {
         </Link>
       </Button>
 
-      <Card className="border-border bg-card">
+      <Card className="border-border bg-card shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="text-foreground flex items-center gap-2">
-            <Upload className="h-5 w-5" />
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Upload className="h-5 w-5 text-primary" />
+            </div>
             Upload Document
           </CardTitle>
           <CardDescription>
-            Add a new document to your collection. Supported formats: PDF, JPG, PNG
+            Add a new document to your collection. Supported formats: PDF, JPG, PNG (Max 10MB)
           </CardDescription>
         </CardHeader>
         <CardContent>
