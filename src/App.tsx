@@ -17,6 +17,7 @@ import SearchPage from "@/pages/Search";
 import DocumentViewer from "@/pages/DocumentViewer";
 import AutofillPage from "@/pages/Autofill";
 import SettingsPage from "@/pages/Settings";
+import InstallPage from "@/pages/Install";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,9 +30,10 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            {/* Public routes */}
+          {/* Public routes */}
             <Route path="/" element={<OnboardingPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/install" element={<InstallPage />} />
             
             {/* Protected routes */}
             <Route
