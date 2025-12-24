@@ -1,39 +1,34 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Breadcrumbs from './Breadcrumbs';
+import BottomNav from './BottomNav';
 
 const MainLayout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const location = useLocation();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // Generate breadcrumb items based on current path
-  const getBreadcrumbs = () => {
-    const pathSegments = location.pathname.split('/').filter(Boolean);
-    const breadcrumbs = [{ label: 'Home', path: '/dashboard' }];
-    
-    let currentPath = '';
-    for (const segment of pathSegments) {
-      currentPath += `/${segment}`;
-      const label = segment.charAt(0).toUpperCase() + segment.slice(1).replace(/-/g, ' ');
-      breadcrumbs.push({ label, path: currentPath });
-    }
-    
-    return breadcrumbs;
-  };
+  // Hide sidebar on settings page for mobile-first design
+  const isSettingsPage = location.pathname === '/settings';
 
   return (
     <div className="min-h-screen bg-background flex">
-      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+      {/* Desktop Sidebar - hidden on settings */}
+      {!isSettingsPage && (
+        <div className="hidden lg:block">
+          <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+        </div>
+      )}
       
       <main className="flex-1 min-w-0">
-        <div className="p-4 sm:p-6 lg:p-8 pt-16 lg:pt-6">
-          <Breadcrumbs items={getBreadcrumbs()} />
+        <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 };

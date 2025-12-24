@@ -1,19 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Files, Upload, Clock, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import CategoryCard from '@/components/cards/CategoryCard';
-import DocumentCard from '@/components/cards/DocumentCard';
-import StatCard from '@/components/cards/StatCard';
-import SearchBar from '@/components/forms/SearchBar';
+import { Link, useNavigate } from 'react-router-dom';
+import { Files, Image, FileText, Search } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useAuth } from '@/context/AuthContext';
 import { databaseService, DocumentMetadata } from '@/services/appwrite';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useNavigate } from 'react-router-dom';
 import { Models } from 'appwrite';
+
+const categoryIcons = [
+  { name: 'Documents', icon: FileText, color: 'bg-blue-100 text-blue-600' },
+  { name: 'Images', icon: Image, color: 'bg-pink-100 text-pink-600' },
+  { name: 'All Files', icon: Files, color: 'bg-purple-100 text-purple-600' },
+];
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ const DashboardPage: React.FC = () => {
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [recentDocs, setRecentDocs] = useState<(DocumentMetadata & Models.Document)[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,131 +56,153 @@ const DashboardPage: React.FC = () => {
     fetchData();
   }, [user, toast]);
 
-  const handleSearch = (query: string) => {
-    if (query.trim()) {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const getCategoryColor = (index: number) => {
+    const colors = [
+      'bg-amber-100',
+      'bg-emerald-100',
+      'bg-blue-100',
+      'bg-pink-100',
+      'bg-purple-100',
+      'bg-orange-100',
+    ];
+    return colors[index % colors.length];
   };
 
   if (loading) {
     return (
-      <div className="space-y-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-12 w-full md:w-96" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-6 p-4 pb-24">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-12 w-full" />
+        <div className="flex gap-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-20 w-20 rounded-xl" />
           ))}
         </div>
+        <Skeleton className="h-32 w-full" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome back, {user?.name?.split(' ')[0] || 'User'}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage and organize your documents securely
-          </p>
+    <div className="space-y-6 pb-24">
+      {/* Greeting */}
+      <div className="animate-fade-in">
+        <h1 className="text-2xl font-bold text-foreground">
+          Hello, {user?.name?.split(' ')[0] || 'User'}!
+        </h1>
+      </div>
+
+      {/* Search Bar */}
+      <form onSubmit={handleSearch} className="animate-fade-in">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          <Input
+            type="text"
+            placeholder="Search your documents"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-12 h-12 bg-card border-border rounded-xl"
+          />
         </div>
-        <SearchBar 
-          onSearch={handleSearch} 
-          className="w-full md:w-96"
-          placeholder="Search all documents..."
-        />
+      </form>
+
+      {/* Quick Categories */}
+      <div className="flex gap-4 justify-center animate-fade-in">
+        {categoryIcons.map((cat, index) => (
+          <Link
+            key={cat.name}
+            to={cat.name === 'All Files' ? '/documents' : `/search?category=${cat.name}`}
+            className="flex flex-col items-center gap-2 transition-transform hover:scale-105 active:scale-95"
+          >
+            <div className={`w-16 h-16 rounded-2xl ${cat.color} flex items-center justify-center`}>
+              <cat.icon className="h-7 w-7" />
+            </div>
+            <span className="text-xs text-muted-foreground font-medium">{cat.name}</span>
+          </Link>
+        ))}
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          title="Total Documents"
-          value={totalCount}
-          icon={Files}
-          description="Across all categories"
-        />
-        <StatCard
-          title="Categories"
-          value={allCategories.length}
-          icon={Clock}
-          description="Organized collections"
-        />
-        <Link to="/upload" className="block">
-          <Card className="border-border bg-primary text-primary-foreground h-full hover:opacity-90 transition-opacity cursor-pointer">
-            <CardContent className="p-6 flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary-foreground/20 flex items-center justify-center">
-                <Upload className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="font-semibold text-lg">Upload New</p>
-                <p className="text-primary-foreground/80 text-sm">Add a document</p>
-              </div>
-              <ArrowRight className="ml-auto h-5 w-5" />
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
-      {/* Categories */}
-      <section>
+      {/* My Collections */}
+      <section className="animate-fade-in">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Categories</h2>
-          <Button variant="ghost" asChild>
-            <Link to="/search">View All</Link>
-          </Button>
+          <h2 className="text-lg font-semibold text-foreground">My Collections</h2>
+          <Link to="/documents" className="text-sm text-primary font-medium">
+            See All
+          </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-          {allCategories.map((category) => (
-            <CategoryCard
+        <div className="grid grid-cols-3 gap-3">
+          {allCategories.slice(0, 6).map((category, index) => (
+            <Link
               key={category}
-              category={category}
-              count={categoryCounts[category] || 0}
-            />
+              to={`/search?category=${encodeURIComponent(category)}`}
+              className="transition-transform hover:scale-105 active:scale-95"
+            >
+              <Card className="border-border bg-card overflow-hidden">
+                <CardContent className="p-3 flex flex-col items-center">
+                  <div className={`w-12 h-12 rounded-xl ${getCategoryColor(index)} flex items-center justify-center mb-2`}>
+                    <span className="text-xl">📁</span>
+                  </div>
+                  <p className="text-xs font-medium text-foreground text-center truncate w-full">
+                    {category}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {categoryCounts[category] || 0} items
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
 
       {/* Recent Documents */}
-      <section>
+      <section className="animate-fade-in">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-foreground">Recent Documents</h2>
-          <Button variant="ghost" asChild>
-            <Link to="/search">View All</Link>
-          </Button>
+          <h2 className="text-lg font-semibold text-foreground">Recent Documents</h2>
+          <Link to="/documents" className="text-sm text-primary font-medium">
+            See All
+          </Link>
         </div>
         
         {recentDocs.length > 0 ? (
           <Card className="border-border bg-card">
             <CardContent className="p-0 divide-y divide-border">
-              {recentDocs.map((doc) => (
-                <DocumentCard
+              {recentDocs.slice(0, 3).map((doc) => (
+                <Link
                   key={doc.$id}
-                  document={doc}
-                  variant="compact"
-                />
+                  to={`/document/${doc.$id}`}
+                  className="flex items-center gap-3 p-4 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {doc.fileName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {doc.category} • {new Date(doc.uploadedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </Link>
               ))}
             </CardContent>
           </Card>
         ) : (
           <Card className="border-border bg-card">
-            <CardContent className="p-12 text-center">
-              <Files className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">No documents yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Upload your first document to get started
-              </p>
-              <Button asChild>
-                <Link to="/upload">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Document
-                </Link>
-              </Button>
+            <CardContent className="p-8 text-center">
+              <Files className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No documents yet</p>
+              <Link to="/upload" className="text-sm text-primary font-medium mt-2 inline-block">
+                Upload your first document
+              </Link>
             </CardContent>
           </Card>
         )}

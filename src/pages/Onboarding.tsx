@@ -85,9 +85,16 @@ const OnboardingPage: React.FC = () => {
 
   const minSwipeDistance = 50;
 
+  const triggerHaptic = () => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(10); // Short haptic feedback
+    }
+  };
+
   const goToSlide = (index: number) => {
     if (isAnimating || index === currentSlide) return;
     
+    triggerHaptic();
     setSlideDirection(index > currentSlide ? 'left' : 'right');
     setIsAnimating(true);
     
