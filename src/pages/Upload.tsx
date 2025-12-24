@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Upload, ArrowLeft } from 'lucide-react';
+import { Loader2, Upload, ArrowLeft, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 import { storageService, databaseService } from '@/services/appwrite';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { generateDescription, suggestCategory } from '@/utils/descriptionGenerator';
 
 const uploadSchema = z.object({
   category: z.string().min(1, 'Please select a category'),
@@ -37,6 +38,25 @@ const UploadPage: React.FC = () => {
     resolver: zodResolver(uploadSchema),
     defaultValues: { category: '', description: '' },
   });
+
+  // Auto-generate description and suggest category when file is selected
+  const handleFileSelect = (selectedFile: File | null) => {
+    setFile(selectedFile);
+    
+    if (selectedFile) {
+      // Generate smart description from filename
+      const autoDescription = generateDescription(selectedFile.name);
+      form.setValue('description', autoDescription);
+      
+      // Suggest category if none selected
+      if (!form.getValues('category')) {
+        const suggestedCategory = suggestCategory(selectedFile.name);
+        if (suggestedCategory) {
+          form.setValue('category', suggestedCategory);
+        }
+      }
+    }
+  };
 
   const handleSubmit = async (data: UploadFormData) => {
     if (!file) {
@@ -134,7 +154,7 @@ const UploadPage: React.FC = () => {
             <div className="space-y-2">
               <Label>File</Label>
               <FileUpload
-                onFileSelect={setFile}
+                onFileSelect={handleFileSelect}
                 accept=".pdf,.jpg,.jpeg,.png"
                 maxSize={10}
               />
@@ -157,7 +177,15 @@ const UploadPage: React.FC = () => {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label htmlFor="description">Description (Optional)</Label>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="description">Description</Label>
+                {file && (
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="h-3 w-3" />
+                    Auto-generated
+                  </span>
+                )}
+              </div>
               <Textarea
                 id="description"
                 placeholder="Add a description for this document..."
