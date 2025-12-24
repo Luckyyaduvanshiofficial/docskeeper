@@ -16,7 +16,10 @@ import {
   ChevronDown,
   Image,
   Archive,
-  Share2
+  Share2,
+  Table2,
+  PanelRightClose,
+  PanelRightOpen
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,6 +63,8 @@ import { format } from 'date-fns';
 import { toast } from 'sonner';
 import SearchBar from '@/components/forms/SearchBar';
 import DocumentsSkeleton from '@/components/skeletons/DocumentsSkeleton';
+import DocumentDataTable from '@/components/DocumentDataTable';
+import DocumentPreviewPanel from '@/components/DocumentPreviewPanel';
 
 type DocumentWithId = DocumentMetadata & { $id: string };
 
@@ -77,8 +82,10 @@ const Documents: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const { allCategories } = useCategories();
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'table'>('grid');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
+  const [showPreviewPanel, setShowPreviewPanel] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<DocumentWithId | null>(null);
   
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -395,7 +402,23 @@ const Documents: React.FC = () => {
               >
                 <List className="h-4 w-4" />
               </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`hidden lg:block p-2 transition-colors ${viewMode === 'table' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
+              >
+                <Table2 className="h-4 w-4" />
+              </button>
             </div>
+            
+            {/* Preview Panel Toggle (Desktop) */}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setShowPreviewPanel(!showPreviewPanel)}
+              className="hidden lg:flex"
+            >
+              {showPreviewPanel ? <PanelRightClose className="h-4 w-4" /> : <PanelRightOpen className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 
