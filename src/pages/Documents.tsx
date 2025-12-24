@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -60,6 +59,7 @@ import { useAuth } from '@/context/AuthContext';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import SearchBar from '@/components/forms/SearchBar';
+import DocumentsSkeleton from '@/components/skeletons/DocumentsSkeleton';
 
 type DocumentWithId = DocumentMetadata & { $id: string };
 
@@ -299,21 +299,7 @@ const Documents: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6 pb-24 lg:pb-8">
-        <Skeleton className="h-20 w-full rounded-2xl" />
-        <div className="flex gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24 flex-1 rounded-xl" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Skeleton key={i} className="h-20 rounded-xl" />
-          ))}
-        </div>
-      </div>
-    );
+    return <DocumentsSkeleton />;
   }
 
   return (
