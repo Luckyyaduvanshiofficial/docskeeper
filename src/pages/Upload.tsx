@@ -26,6 +26,7 @@ import { useAuth } from '@/context/AuthContext';
 import { storageService, databaseService } from '@/services/appwrite';
 import { geminiService } from '@/services/gemini';
 import { useToast } from '@/hooks/use-toast';
+import { useConfetti } from '@/hooks/useConfetti';
 import { Link } from 'react-router-dom';
 
 const uploadSchema = z.object({
@@ -39,6 +40,7 @@ const UploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { triggerFirstUploadCelebration } = useConfetti();
   
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -171,12 +173,20 @@ const UploadPage: React.FC = () => {
 
       setProgress(100);
 
+      // Check if this is first upload and trigger celebration
+      const isFirstUpload = triggerFirstUploadCelebration();
+
       toast({
-        title: 'Upload successful!',
-        description: `${file.name} has been uploaded successfully.`,
+        title: isFirstUpload ? '🎉 Congratulations!' : 'Upload successful!',
+        description: isFirstUpload 
+          ? `Welcome! ${file.name} is your first document!`
+          : `${file.name} has been uploaded successfully.`,
       });
 
-      navigate('/dashboard');
+      // Small delay to let confetti show before navigating
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, isFirstUpload ? 1500 : 300);
     } catch (error) {
       toast({
         title: 'Upload failed',
