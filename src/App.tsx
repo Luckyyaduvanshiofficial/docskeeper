@@ -8,7 +8,7 @@ import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/layout/MainLayout";
 
 // Pages
-import LandingPage from "@/pages/Landing";
+import OnboardingPage from "@/pages/Onboarding";
 import LoginPage from "@/pages/Login";
 import DashboardPage from "@/pages/Dashboard";
 import DocumentsPage from "@/pages/Documents";
@@ -29,7 +29,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<LandingPage />} />
+            <Route path="/" element={<OnboardingPage />} />
             <Route path="/login" element={<LoginPage />} />
             
             {/* Protected routes */}
