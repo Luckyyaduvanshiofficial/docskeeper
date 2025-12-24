@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Sparkles, Copy, Check, Loader2, FileText } from 'lucide-react';
+import { Sparkles, Copy, Check, Loader2, FileText, Brain, Zap, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -19,15 +20,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
-import { autofillService } from '@/services/appwrite';
+import { databaseService } from '@/services/appwrite';
+import { geminiService } from '@/services/gemini';
 import { useToast } from '@/hooks/use-toast';
 
 const FORM_TYPES = [
-  { value: 'Exam', label: 'Exam Application' },
-  { value: 'Scholarship', label: 'Scholarship Application' },
-  { value: 'Internship', label: 'Internship Application' },
-  { value: 'Admission', label: 'Admission Form' },
-  { value: 'Custom', label: 'Custom Form' },
+  { value: 'Exam', label: 'Exam Application', icon: '📝', description: 'Competitive exams, entrance tests' },
+  { value: 'Scholarship', label: 'Scholarship Application', icon: '🎓', description: 'Financial aid, merit scholarships' },
+  { value: 'Internship', label: 'Internship Application', icon: '💼', description: 'Internship & job applications' },
+  { value: 'Admission', label: 'Admission Form', icon: '🏫', description: 'College & university admissions' },
+  { value: 'Custom', label: 'Custom Form', icon: '📋', description: 'Any other application form' },
 ];
 
 const AutofillPage: React.FC = () => {
@@ -38,6 +40,7 @@ const AutofillPage: React.FC = () => {
   const [autofillData, setAutofillData] = useState<Record<string, string> | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [documentCount, setDocumentCount] = useState(0);
 
   const handleGenerate = async () => {
     if (!formType) {
@@ -62,25 +65,34 @@ const AutofillPage: React.FC = () => {
     setAutofillData(null);
 
     try {
-      const result = await autofillService.generateAutofill(formType);
+      // Fetch user's documents from Appwrite
+      const docsResult = await databaseService.listDocuments();
       
-      if (result.success && result.data) {
-        setAutofillData(result.data);
-        toast({
-          title: 'Autofill generated',
-          description: 'Your form data has been prepared based on your documents',
-        });
-      } else {
-        toast({
-          title: 'Generation failed',
-          description: result.error || 'Could not generate autofill data',
-          variant: 'destructive',
-        });
+      if (!docsResult.success || !docsResult.data) {
+        throw new Error('Failed to fetch documents');
       }
-    } catch (error) {
+
+      const documents = (docsResult.data || []).map((doc: any) => ({
+        fileName: doc.fileName,
+        category: doc.category,
+        description: doc.description,
+      }));
+
+      setDocumentCount(documents.length);
+
+      // Use Gemini AI to generate autofill data
+      const result = await geminiService.generateAutofillData(formType, documents);
+      
+      setAutofillData(result);
       toast({
-        title: 'Error',
-        description: 'Something went wrong while generating autofill data',
+        title: 'Autofill generated',
+        description: `AI analyzed ${documents.length} documents to fill your form`,
+      });
+    } catch (error) {
+      console.error('Autofill generation error:', error);
+      toast({
+        title: 'Generation failed',
+        description: error instanceof Error ? error.message : 'Could not generate autofill data',
         variant: 'destructive',
       });
     } finally {
@@ -112,58 +124,87 @@ const AutofillPage: React.FC = () => {
     }
   };
 
+  const handleCopyField = async (field: string, value: string) => {
+    try {
+      await navigator.clipboard.writeText(value);
+      toast({
+        title: 'Copied!',
+        description: `${field} copied to clipboard`,
+      });
+    } catch {
+      toast({
+        title: 'Copy failed',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const selectedFormType = FORM_TYPES.find(t => t.value === formType);
+
   return (
-    <div className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="text-center animate-fade-in">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 mb-4 rounded-2xl">
-          <Sparkles className="h-8 w-8 text-primary" />
+          <Brain className="h-8 w-8 text-primary" />
         </div>
         <h1 className="text-3xl font-bold text-foreground">AI Autofill Assistant</h1>
         <p className="text-muted-foreground mt-2 max-w-lg mx-auto">
-          Automatically fill forms using data extracted from your stored documents. 
-          Select a form type and let AI do the work.
+          Powered by Gemini AI to automatically extract and fill form data from your documents
         </p>
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Badge variant="outline" className="gap-1">
+            <Zap className="h-3 w-3" />
+            Gemini 2.0 Flash
+          </Badge>
+          <Badge variant="secondary">Real-time Analysis</Badge>
+        </div>
       </div>
 
-      {/* Form Selection */}
-      <Card className="border-border bg-card shadow-sm hover:shadow-md transition-shadow">
+      {/* Form Type Selection Grid */}
+      <Card className="border-border bg-card shadow-sm">
         <CardHeader>
-          <CardTitle>Generate Autofill Data</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            Select Form Type
+          </CardTitle>
           <CardDescription>
-            Choose the type of form you want to fill out
+            Choose the type of form you're filling out for optimized field suggestions
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Form Type</Label>
-            <Select value={formType} onValueChange={setFormType}>
-              <SelectTrigger className="bg-background border-border">
-                <SelectValue placeholder="Select form type" />
-              </SelectTrigger>
-              <SelectContent>
-                {FORM_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {FORM_TYPES.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => setFormType(type.value)}
+                className={`p-4 rounded-lg border-2 text-left transition-all hover:shadow-md ${
+                  formType === type.value
+                    ? 'border-primary bg-primary/5 shadow-md'
+                    : 'border-border bg-background hover:border-primary/50'
+                }`}
+              >
+                <div className="text-2xl mb-2">{type.icon}</div>
+                <div className="font-medium text-foreground">{type.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{type.description}</div>
+              </button>
+            ))}
           </div>
 
           <Button 
             onClick={handleGenerate} 
             disabled={loading || !formType}
             className="w-full shadow-md hover:shadow-lg transition-all"
+            size="lg"
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
+                AI is analyzing your documents...
               </>
             ) : (
               <>
-                <Sparkles className="mr-2 h-4 w-4" />
+                <Brain className="mr-2 h-4 w-4" />
                 Generate Autofill Data
               </>
             )}
@@ -174,48 +215,83 @@ const AutofillPage: React.FC = () => {
       {/* Results */}
       {autofillData && (
         <Card className="border-border bg-card shadow-sm animate-fade-in">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Autofill Results</CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Check className="h-5 w-5 text-primary" />
+                Autofill Results
+              </CardTitle>
               <CardDescription>
-                Data extracted from your documents for {FORM_TYPES.find(t => t.value === formType)?.label}
+                {selectedFormType?.label} • Analyzed {documentCount} documents
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={handleCopyAll} className="shadow-sm hover:shadow-md transition-all">
-              {copied ? (
-                <>
-                  <Check className="mr-2 h-4 w-4" />
-                  Copied
-                </>
-              ) : (
-                <>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Copy All
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleGenerate}
+                disabled={loading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Regenerate
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={handleCopyAll}
+              >
+                {copied ? (
+                  <>
+                    <Check className="mr-1 h-4 w-4" />
+                    Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="mr-1 h-4 w-4" />
+                    Copy All
+                  </>
+                )}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Field</TableHead>
-                  <TableHead>Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(autofillData).map(([field, value]) => (
-                  <TableRow key={field} className="hover:bg-muted/50 transition-colors">
-                    <TableCell className="font-medium text-foreground">
-                      {field}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {value || <span className="text-muted-foreground italic">Not found</span>}
-                    </TableCell>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="font-semibold">Field</TableHead>
+                    <TableHead className="font-semibold">Value</TableHead>
+                    <TableHead className="w-20"></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(autofillData).map(([field, value]) => (
+                    <TableRow key={field} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium text-foreground">
+                        {field}
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {value?.startsWith('[') ? (
+                          <span className="text-muted-foreground italic">{value}</span>
+                        ) : (
+                          value || <span className="text-muted-foreground italic">Not found</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleCopyField(field, value)}
+                          className="h-8 w-8 p-0"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -230,9 +306,9 @@ const AutofillPage: React.FC = () => {
             <div>
               <h3 className="font-medium text-foreground mb-1">Improve Your Results</h3>
               <p className="text-sm text-muted-foreground">
-                The more documents you upload with properly tagged metadata and extracted fields, 
-                the more accurate your autofill suggestions will be. Upload ID proofs, certificates, 
-                and academic documents to get the best results.
+                Upload more documents with clear descriptions for better autofill accuracy.
+                The AI analyzes your ID proofs, certificates, academic records, and other documents
+                to extract relevant information for your forms.
               </p>
             </div>
           </div>
