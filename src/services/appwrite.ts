@@ -34,13 +34,12 @@ export interface DocumentMetadata {
 }
 
 // Category types
-export type DocumentCategory = 'Academic' | 'Receipts' | 'ID Proofs' | 'Certificates' | 'Others';
+export type DocumentCategory = 'Academic' | 'Receipts' | 'ID Proofs' | 'Others';
 
 export const DOCUMENT_CATEGORIES: DocumentCategory[] = [
   'Academic',
   'Receipts',
   'ID Proofs',
-  'Certificates',
   'Others',
 ];
 
