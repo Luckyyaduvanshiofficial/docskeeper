@@ -5,7 +5,6 @@ export const PREDEFINED_CATEGORIES = [
   'Academic',
   'Receipts',
   'ID Proofs',
-  'Certificates',
   'Personal',
   'Family',
   'Others',
