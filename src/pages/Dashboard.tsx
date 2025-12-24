@@ -8,9 +8,9 @@ import { useAuth } from '@/context/AuthContext';
 import { databaseService, DocumentMetadata } from '@/services/appwrite';
 import { useCategories } from '@/hooks/useCategories';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Models } from 'appwrite';
+import DashboardSkeleton from '@/components/skeletons/DashboardSkeleton';
 
 const categoryIcons = [
   { name: 'Documents', icon: FileText, color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' },
@@ -117,18 +117,7 @@ const DashboardPage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6 p-4 pb-24">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="h-12 w-full rounded-xl" />
-        <div className="flex gap-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-20 w-20 rounded-xl" />
-          ))}
-        </div>
-        <Skeleton className="h-32 w-full rounded-xl" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

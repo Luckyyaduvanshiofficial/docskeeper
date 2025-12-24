@@ -3,6 +3,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
 import BottomNav from './BottomNav';
+import PageTransition from './PageTransition';
+import ThemeToggle from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -41,12 +43,14 @@ const MainLayout: React.FC = () => {
               </SheetContent>
             </Sheet>
             <h1 className="font-semibold text-foreground">DocsKeeper</h1>
-            <div className="w-10" /> {/* Spacer for centering */}
+            <ThemeToggle />
           </div>
         </div>
         
         <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <Outlet />
+          <PageTransition>
+            <Outlet />
+          </PageTransition>
         </div>
       </main>
 

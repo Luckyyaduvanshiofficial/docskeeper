@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/context/AuthContext";
 import AuthGuard from "@/components/AuthGuard";
 import MainLayout from "@/components/layout/MainLayout";
@@ -25,41 +26,43 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-          {/* Public routes */}
-            <Route path="/" element={<OnboardingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/install" element={<InstallPage />} />
-            
-            {/* Protected routes */}
-            <Route
-              element={
-                <AuthGuard>
-                  <MainLayout />
-                </AuthGuard>
-              }
-            >
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/documents" element={<DocumentsPage />} />
-              <Route path="/upload" element={<UploadPage />} />
-              <Route path="/search" element={<SearchPage />} />
-              <Route path="/document/:id" element={<DocumentViewer />} />
-              <Route path="/autofill" element={<AutofillPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/refer" element={<ReferPage />} />
-            </Route>
-            
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+            {/* Public routes */}
+              <Route path="/" element={<OnboardingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/install" element={<InstallPage />} />
+              
+              {/* Protected routes */}
+              <Route
+                element={
+                  <AuthGuard>
+                    <MainLayout />
+                  </AuthGuard>
+                }
+              >
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/documents" element={<DocumentsPage />} />
+                <Route path="/upload" element={<UploadPage />} />
+                <Route path="/search" element={<SearchPage />} />
+                <Route path="/document/:id" element={<DocumentViewer />} />
+                <Route path="/autofill" element={<AutofillPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/refer" element={<ReferPage />} />
+              </Route>
+              
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

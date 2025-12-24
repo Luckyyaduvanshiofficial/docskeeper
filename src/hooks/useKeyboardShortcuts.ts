@@ -13,14 +13,30 @@ export const useKeyboardShortcuts = () => {
         return;
       }
 
-      // "/" - Quick search
+      // Ctrl/Cmd + K - Quick search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        navigate('/search');
+        toast('Quick search opened', { duration: 1500 });
+        return;
+      }
+
+      // Ctrl/Cmd + U - Upload
+      if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+        e.preventDefault();
+        navigate('/upload');
+        toast('Upload page opened', { duration: 1500 });
+        return;
+      }
+
+      // "/" - Quick search (without modifier)
       if (e.key === '/') {
         e.preventDefault();
         navigate('/search');
         toast('Quick search opened', { duration: 1500 });
       }
 
-      // "u" - Upload
+      // "u" - Upload (without modifier)
       if (e.key === 'u' || e.key === 'U') {
         e.preventDefault();
         navigate('/upload');
@@ -38,7 +54,7 @@ export const useKeyboardShortcuts = () => {
       if (e.key === '?' && e.shiftKey) {
         e.preventDefault();
         toast(
-          '⌨️ Keyboard Shortcuts\n/ - Search\nU - Upload\nD - Dashboard',
+          '⌨️ Keyboard Shortcuts\nCtrl+K or / - Search\nCtrl+U or U - Upload\nD - Dashboard',
           { duration: 4000 }
         );
       }

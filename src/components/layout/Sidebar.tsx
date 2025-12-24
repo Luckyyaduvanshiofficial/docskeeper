@@ -16,6 +16,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
+import ThemeToggle from '@/components/ThemeToggle';
+import NotificationBadge from '@/components/NotificationBadge';
+import { useNotificationBadges } from '@/hooks/useNotificationBadges';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -35,9 +38,19 @@ const navItems = [
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const { badges, clearBadge } = useNotificationBadges();
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleNavClick = (path: string) => {
+    if (path === '/documents') {
+      clearBadge('documents');
+    }
+    if (window.innerWidth < 1024) {
+      onToggle();
+    }
   };
 
   return (
@@ -81,22 +94,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           <nav className="flex-1 p-4 space-y-2">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
+              const showBadge = item.path === '/documents' && badges.documents > 0;
               return (
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => window.innerWidth < 1024 && onToggle()}
+                  onClick={() => handleNavClick(item.path)}
                   className={cn(
-                    "flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg group",
+                    "relative flex items-center gap-3 px-4 py-3 text-sm font-medium transition-all duration-200 rounded-lg group",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "text-muted-foreground hover:bg-accent hover:text-foreground hover:translate-x-1"
                   )}
                 >
-                  <item.icon className={cn(
-                    "h-5 w-5 transition-transform",
-                    !isActive && "group-hover:scale-110"
-                  )} />
+                  <div className="relative">
+                    <item.icon className={cn(
+                      "h-5 w-5 transition-transform",
+                      !isActive && "group-hover:scale-110"
+                    )} />
+                    {showBadge && <NotificationBadge count={badges.documents} />}
+                  </div>
                   {item.label}
                 </NavLink>
               );
@@ -104,9 +121,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
           </nav>
 
           {/* User section */}
-          <div className="p-4 border-t border-border">
-            <div className="flex items-center gap-3 px-4 py-3 mb-2">
-              <div className="w-8 h-8 bg-secondary flex items-center justify-center text-secondary-foreground text-sm font-medium">
+          <div className="p-4 border-t border-border space-y-2">
+            <div className="flex items-center gap-3 px-4 py-3">
+              <div className="w-8 h-8 bg-secondary flex items-center justify-center text-secondary-foreground text-sm font-medium rounded-lg">
                 {user?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div className="flex-1 min-w-0">
@@ -118,6 +135,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onToggle }) => {
                 </p>
               </div>
             </div>
+            <ThemeToggle variant="text" />
             <Button
               variant="ghost"
               className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
