@@ -8,9 +8,11 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const MainLayout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [sheetOpen, setSheetOpen] = React.useState(false);
   const location = useLocation();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const closeSheet = () => setSheetOpen(false);
 
   // Hide sidebar on settings page for mobile-first design
   const isSettingsPage = location.pathname === '/settings';
@@ -28,14 +30,14 @@ const MainLayout: React.FC = () => {
         {/* Mobile Header with Hamburger Menu */}
         <div className="lg:hidden sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
           <div className="flex items-center justify-between p-4">
-            <Sheet>
+            <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-xl">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-72">
-                <Sidebar isOpen={true} onToggle={() => {}} />
+                <Sidebar isOpen={true} onToggle={closeSheet} />
               </SheetContent>
             </Sheet>
             <h1 className="font-semibold text-foreground">DocsKeeper</h1>
