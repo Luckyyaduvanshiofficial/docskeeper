@@ -133,14 +133,52 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Greeting */}
+      {/* Hero Greeting Section */}
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground">
-          {getGreeting()}, {user?.name?.split(' ')[0] || 'User'} 👋
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          You have {displayCount} document{totalCount !== 1 ? 's' : ''} stored securely
-        </p>
+        <Card className="border-border bg-gradient-to-br from-primary/10 via-card to-primary/5 shadow-lg overflow-hidden relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,hsl(var(--primary)/0.15),transparent_50%)]" />
+          <CardContent className="p-6 relative">
+            <div className="flex items-start justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-primary">
+                  {getGreeting()}
+                </p>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {user?.name?.split(' ')[0] || 'User'} 👋
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Your documents are safe and organized
+                </p>
+              </div>
+              
+              {/* Stylish Document Counter */}
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-lg flex flex-col items-center justify-center transform hover:scale-105 transition-transform duration-300">
+                  <span className="text-2xl font-bold text-primary-foreground">
+                    {displayCount}
+                  </span>
+                  <span className="text-[10px] font-medium text-primary-foreground/80 uppercase tracking-wider">
+                    {totalCount === 1 ? 'Doc' : 'Docs'}
+                  </span>
+                </div>
+                <div className="absolute -inset-1 bg-primary/20 rounded-2xl blur-lg -z-10" />
+              </div>
+            </div>
+            
+            {/* Progress indicator */}
+            <div className="mt-4 flex items-center gap-3">
+              <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-1000"
+                  style={{ width: `${Math.min((totalCount / 50) * 100, 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-muted-foreground font-medium">
+                {totalCount}/50 docs
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Search Bar */}
