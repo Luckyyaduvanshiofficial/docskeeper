@@ -71,17 +71,17 @@ const LandingPage: React.FC = () => {
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logoImage} alt="DocsKeeper" className="w-10 h-10 rounded-lg object-contain" />
+            <img src={logoImage} alt="DocsKeeper" className="w-10 h-10 rounded-xl object-contain" />
             <div>
               <span className="text-xl font-bold text-foreground">DocsKeeper</span>
               <p className="text-[10px] text-muted-foreground leading-none">Your Personal Document Vault</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild className="hidden sm:inline-flex">
+            <Button variant="ghost" asChild className="hidden sm:inline-flex rounded-xl">
               <Link to="/login">Sign In</Link>
             </Button>
-            <Button asChild className="shadow-md hover:shadow-lg transition-shadow">
+            <Button asChild className="shadow-md hover:shadow-lg transition-shadow rounded-xl">
               <Link to="/login">Get Started</Link>
             </Button>
           </div>
@@ -105,13 +105,13 @@ const LandingPage: React.FC = () => {
               Perfect for personal, family, and professional use.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-              <Button size="lg" asChild className="text-base h-12 px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+              <Button size="lg" asChild className="text-base h-12 px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 rounded-xl">
                 <Link to="/login">
                   Start Free
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="text-base h-12 px-8 hover:shadow-md transition-all">
+              <Button size="lg" variant="outline" asChild className="text-base h-12 px-8 hover:shadow-md transition-all rounded-xl">
                 <a href="#features">Learn More</a>
               </Button>
             </div>
@@ -131,7 +131,7 @@ const LandingPage: React.FC = () => {
           <div className="flex flex-wrap justify-center gap-8 md:gap-16">
             {trustBadges.map((badge, index) => (
               <div key={index} className="flex items-center gap-3 animate-fade-in">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                   <badge.icon className="h-6 w-6 text-primary" />
                 </div>
                 <div>
@@ -176,10 +176,10 @@ const LandingPage: React.FC = () => {
             {features.map((feature, index) => (
               <Card 
                 key={index} 
-                className="border-border bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group"
+                className="border-border bg-card hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group rounded-2xl"
               >
                 <CardContent className="p-6">
-                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-xl mb-4 transition-transform group-hover:scale-110">
+                  <div className="w-12 h-12 bg-primary/10 flex items-center justify-center rounded-2xl mb-4 transition-transform group-hover:scale-110">
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -198,7 +198,7 @@ const LandingPage: React.FC = () => {
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-muted/30">
         <div className="container mx-auto px-4">
-          <Card className="border-border bg-card max-w-3xl mx-auto shadow-xl">
+          <Card className="border-border bg-card max-w-3xl mx-auto shadow-xl rounded-3xl">
             <CardContent className="p-8 md:p-12 text-center">
               <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-4">
                 Ready to get organized?
@@ -206,7 +206,7 @@ const LandingPage: React.FC = () => {
               <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
                 Join thousands of users who trust DocsKeeper to manage their important documents securely.
               </p>
-              <Button size="lg" asChild className="text-base h-12 px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
+              <Button size="lg" asChild className="text-base h-12 px-8 shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5 rounded-xl">
                 <Link to="/login">
                   Create Free Account
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -222,7 +222,7 @@ const LandingPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-2">
-              <img src={logoImage} alt="DocsKeeper" className="w-8 h-8 rounded-lg object-contain" />
+              <img src={logoImage} alt="DocsKeeper" className="w-8 h-8 rounded-xl object-contain" />
               <span className="font-semibold text-foreground">DocsKeeper</span>
             </div>
             <p className="text-sm text-muted-foreground">
