@@ -16,6 +16,7 @@ import UploadPage from "@/pages/Upload";
 import SearchPage from "@/pages/Search";
 import DocumentViewer from "@/pages/DocumentViewer";
 import AutofillPage from "@/pages/Autofill";
+import SettingsPage from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/search" element={<SearchPage />} />
               <Route path="/document/:id" element={<DocumentViewer />} />
               <Route path="/autofill" element={<AutofillPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
             
             {/* 404 */}
