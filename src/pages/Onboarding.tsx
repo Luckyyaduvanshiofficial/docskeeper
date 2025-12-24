@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText } from 'lucide-react';
+import { FileText, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import onboarding1 from '@/assets/onboarding-1.png';
 import onboarding2 from '@/assets/onboarding-2.png';
@@ -232,19 +232,31 @@ const OnboardingPage: React.FC = () => {
 
       {/* Bottom Actions */}
       <div className="p-6 space-y-3 animate-fade-in">
+        {/* Next / Get Started Button */}
+        {currentSlide < slides.length - 1 ? (
+          <Button
+            className="w-full h-12 text-base transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            onClick={() => goToSlide(currentSlide + 1)}
+            disabled={isAnimating}
+          >
+            Next
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            className="w-full h-12 text-base transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+            onClick={handleRegister}
+          >
+            Get Started
+          </Button>
+        )}
+
         <Button
           variant="outline"
           className="w-full h-12 text-base border-primary text-primary hover:bg-primary/5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
           onClick={handleLogin}
         >
-          Log In
-        </Button>
-        
-        <Button
-          className="w-full h-12 text-base transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-          onClick={handleRegister}
-        >
-          Register
+          Already have an account? Log In
         </Button>
 
         <button
