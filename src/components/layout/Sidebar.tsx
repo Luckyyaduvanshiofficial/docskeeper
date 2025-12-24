@@ -9,7 +9,8 @@ import {
   FileText,
   Menu,
   X,
-  Settings
+  Settings,
+  Share2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/upload', icon: Upload, label: 'Upload' },
   { path: '/search', icon: Search, label: 'Search' },
   { path: '/autofill', icon: Sparkles, label: 'AI Autofill' },
+  { path: '/refer', icon: Share2, label: 'Refer Friends' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];
 
