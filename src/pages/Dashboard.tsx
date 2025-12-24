@@ -143,8 +143,11 @@ const DashboardPage: React.FC = () => {
                 <p className="text-sm font-medium text-primary">
                   {getGreeting()}
                 </p>
-                <h1 className="text-2xl font-bold text-foreground">
-                  {user?.name?.split(' ')[0] || 'User'} 👋
+                <h1 className="text-2xl font-bold">
+                  <span className="bg-gradient-to-r from-primary via-purple-500 to-pink-500 bg-clip-text text-transparent animate-pulse bg-[length:200%_auto]">
+                    {user?.name?.split(' ')[0] || 'User'}
+                  </span>
+                  {' '}👋
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Your documents are safe and organized
@@ -163,19 +166,6 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <div className="absolute -inset-1 bg-primary/20 rounded-2xl blur-lg -z-10" />
               </div>
-            </div>
-            
-            {/* Progress indicator */}
-            <div className="mt-4 flex items-center gap-3">
-              <div className="flex-1 h-2 bg-muted/50 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-1000"
-                  style={{ width: `${Math.min((totalCount / 50) * 100, 100)}%` }}
-                />
-              </div>
-              <span className="text-xs text-muted-foreground font-medium">
-                {totalCount}/50 docs
-              </span>
             </div>
           </CardContent>
         </Card>
