@@ -2,30 +2,37 @@ import React from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import Sidebar from './Sidebar';
+import CollapsibleSidebar from './CollapsibleSidebar';
 import BottomNav from './BottomNav';
 import PageTransition from './PageTransition';
 import ThemeToggle from '@/components/ThemeToggle';
+import CommandPalette from '@/components/CommandPalette';
+import DragDropUpload from '@/components/DragDropUpload';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const MainLayout: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = React.useState(false);
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = React.useState(false);
   const location = useLocation();
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSheet = () => setSheetOpen(false);
+  const toggleSidebarCollapse = () => setSidebarCollapsed(!sidebarCollapsed);
 
   // Hide sidebar on settings page for mobile-first design
   const isSettingsPage = location.pathname === '/settings';
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Desktop Sidebar - hidden on settings */}
+    <div className="min-h-screen bg-background flex w-full">
+      {/* Command Palette */}
+      <CommandPalette />
+      
+      {/* Desktop Collapsible Sidebar - hidden on settings */}
       {!isSettingsPage && (
-        <div className="hidden lg:block">
-          <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
-        </div>
+        <CollapsibleSidebar 
+          isCollapsed={sidebarCollapsed} 
+          onToggle={toggleSidebarCollapse} 
+        />
       )}
       
       <main className="flex-1 min-w-0">
@@ -47,11 +54,13 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
         
-        <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
-          <PageTransition>
-            <Outlet />
-          </PageTransition>
-        </div>
+        <DragDropUpload>
+          <div className="p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+            <PageTransition>
+              <Outlet />
+            </PageTransition>
+          </div>
+        </DragDropUpload>
       </main>
 
       {/* Mobile Bottom Navigation */}

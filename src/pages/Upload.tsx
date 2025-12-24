@@ -56,6 +56,15 @@ const UploadPage: React.FC = () => {
     defaultValues: { category: '', description: '' },
   });
 
+  // Check for dropped file from DragDropUpload
+  React.useEffect(() => {
+    const pendingFile = (window as any).__pendingUploadFile;
+    if (pendingFile) {
+      handleFileSelect(pendingFile);
+      delete (window as any).__pendingUploadFile;
+    }
+  }, []);
+
   // AI-powered document analysis when file is selected
   const handleFileSelect = async (selectedFile: File | null) => {
     setFile(selectedFile);
